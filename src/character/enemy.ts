@@ -1,4 +1,4 @@
-import { AbstractCharacterParams, Character, CharacterStates } from "./_character.js";
+import { AbstractCharacterParams, Character, CharacterStates } from "./character.js";
 
 export class Enemy extends Character {
 

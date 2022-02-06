@@ -2,7 +2,7 @@
 // TODO: extend Projectile class, which extends Weapon class
 
 import { Enemy } from "../character/enemy";
-import { Character } from "../character/_character";
+import { Character } from "../character/character.js";
 import { IMainScene } from "../scenes/main.js";
 import { INullablePoint } from "../struct/point";
 import { IPower } from "../struct/power";

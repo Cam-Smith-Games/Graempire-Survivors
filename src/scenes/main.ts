@@ -37,10 +37,10 @@ export class MainScene extends Phaser.Scene implements IMainScene {
 
 
     preload() {
-        this.load.atlas("vamp", "/res/vamp.png", "/res/vamp.json");
-        this.load.image("graem_happy", "/res/graem_happy.png");
-        this.load.image("graem_sad", "/res/graem_sad.png");
-        this.load.image("fireball", "/res/fireball.png");
+        this.load.atlas("vamp", "res/vamp.png", "/res/vamp.json");
+        this.load.image("graem_happy", "res/graem_happy.png");
+        this.load.image("graem_sad", "res/graem_sad.png");
+        this.load.image("fireball", "res/fireball.png");
     }
 
     create() {

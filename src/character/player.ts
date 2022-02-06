@@ -1,7 +1,7 @@
 import { Fireball } from "../projectiles/fireball.js";
 import { Vector } from "../struct/vector.js";
 import { Enemy } from "./enemy.js";
-import { AbstractCharacterParams, Character, CharacterStates } from "./_character.js";
+import { AbstractCharacterParams, Character, CharacterStates } from "./character.js";
 
 export class Player extends Character {
 
