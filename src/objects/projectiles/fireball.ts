@@ -3,9 +3,9 @@
 
 import { Enemy } from "../character/enemy";
 import { Character } from "../character/character.js";
-import { IMainScene } from "../scenes/main.js";
-import { INullablePoint } from "../struct/point";
-import { IPower } from "../struct/power";
+import { IMainScene } from "../../scenes/main.js";
+import { INullablePoint } from "../../struct/point";
+import { IPower } from "../../struct/power";
 
 export interface ProjectileParams {
     main: IMainScene;

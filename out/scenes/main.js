@@ -1,27 +1,24 @@
-import { Enemy } from "../character/enemy.js";
-import { Player } from "../character/player.js";
-import { Fireball } from "../projectiles/fireball.js";
+import { Enemy } from "../objects/character/enemy.js";
+import { Player } from "../objects/character/player.js";
+import { Fireball } from "../objects/projectiles/fireball.js";
+import { Spawner } from "../objects/spawner.js";
 export class MainScene extends Phaser.Scene {
     constructor() {
         super("???");
-        // #region enemy spawning (this will be changed. currently very simple)
-        /** rate to spawn enemies (milliseconds) */
-        this.spawnRate = 5000;
-        /** time since last enemy spawn (milliseconds) */
-        this.spawnTimer = 5000;
-        /** number of monsters to spawn when it's spawn time */
-        this.spawnCount = 10;
         this.cursors = null;
         this.colliders = {};
+        this.spawners = [];
     }
     preload() {
         this.load.atlas("vamp", "res/vamp.png", "res/vamp.json");
+        this.load.atlas("bat_purp", "res/bat_purp.png", "res/bat.json");
+        this.load.atlas("bat_red", "res/bat_red.png", "res/bat.json");
         this.load.image("graem_happy", "res/graem_happy.png");
         this.load.image("graem_sad", "res/graem_sad.png");
         this.load.image("fireball", "res/fireball.png");
     }
     create() {
-        this.create_animations();
+        this.load_animations();
         this.physics.world.setFPS(120);
         this.player = new Player({
             main: this,
@@ -61,54 +58,49 @@ export class MainScene extends Phaser.Scene {
                 enemy: enemy
             });*
         })*/
-    }
-    create_animations() {
-        this.anims.create({
-            key: "vamp_up",
-            frames: this.anims.generateFrameNames('vamp', { prefix: "up", end: 2 }),
-            frameRate: 4
-        });
-        this.anims.create({
-            key: "vamp_down",
-            frames: this.anims.generateFrameNames('vamp', { prefix: "down", end: 2 }),
-            frameRate: 4
-        });
-        this.anims.create({
-            key: "vamp_left",
-            frames: this.anims.generateFrameNames('vamp', { prefix: "left", end: 2 }),
-            frameRate: 4
-        });
-        this.anims.create({
-            key: "vamp_right",
-            frames: this.anims.generateFrameNames('vamp', { prefix: "right", end: 2 }),
-            frameRate: 4
-        });
-    }
-    update(_, delta) {
-        this.update_spawn(delta);
-        this.update_input();
-        this.player.update(delta);
-        for (let enemy of this.colliders.enemies.children.entries) {
-            enemy.update(delta);
-        }
-    }
-    update_spawn(delta) {
-        this.spawnTimer += delta;
-        if (this.spawnTimer > this.spawnRate) {
-            this.spawnTimer = 0;
-            const padding = 100;
-            for (let i = 0; i < this.spawnCount; i++) {
-                let x = (Math.random() * this.scale.width - padding) + padding;
-                let y = (Math.random() * this.scale.height - padding) + padding;
-                // todo: randomize pos
-                new Enemy({
-                    main: this,
+        this.spawners = [
+            new Spawner({
+                main: this,
+                params: {
                     texture: "graem_sad",
                     scale: { x: 0.15, y: 0.15 },
-                    pos: { x: x, y: y },
+                    speed: 100,
+                    animate: false
+                }
+            }),
+            new Spawner({
+                main: this,
+                params: {
+                    texture: "bat_purp",
+                    scale: { x: 2, y: 2 },
                     speed: 100
-                });
-            }
+                }
+            }),
+        ];
+    }
+    load_atlas(key, frame_count, dirs = ["up", "down", "left", "right"], frameRate = 4) {
+        for (let dir of dirs) {
+            console.log("LOADING " + key + "_" + dir);
+            this.anims.create({
+                key: key + "_" + dir,
+                // end at frame_count (always start at 0)
+                frames: this.anims.generateFrameNames(key, { prefix: dir, end: frame_count - 1 }),
+                frameRate: frameRate
+            });
+        }
+    }
+    load_animations() {
+        this.load_atlas("vamp", 3);
+        this.load_atlas("bat_purp", 3, ["up", "right", "down", "left"]);
+        this.load_atlas("bat_red", 3, ["up", "right", "down", "left"]);
+    }
+    update(_, delta) {
+        this.update_input();
+        this.player.update(delta);
+        for (let spawner of this.spawners)
+            spawner.update(delta);
+        for (let enemy of this.colliders.enemies.children.entries) {
+            enemy.update(delta);
         }
     }
     update_input() {

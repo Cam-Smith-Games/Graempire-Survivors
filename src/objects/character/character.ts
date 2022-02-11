@@ -1,22 +1,25 @@
-import { IMainScene } from "../scenes/main.js";
-import { INullablePoint } from "../struct/point.js";
-import { IPower, Power } from "../struct/power.js";
+import { IMainScene } from "../../scenes/main.js";
+import { INullablePoint } from "../../struct/point.js";
+import { IPower, Power } from "../../struct/power.js";
 
 export interface CharacterParams {
-    main: IMainScene;
-
     pos?: INullablePoint;
     scale?: INullablePoint;
     health?: IPower;
 
     flipX?: boolean;
     speed?: number;
+
+    size?: INullablePoint;
+    texture: string;
+
+    /** some characters might not need animation */
+    animate?: boolean;
 }
 
 /** these properties get set by the Character class implementation, but not exposed outside */
 export interface AbstractCharacterParams extends CharacterParams {
-    size?: INullablePoint;
-    texture: string;
+    main: IMainScene;  
 }
 
 export enum CharacterStates {
@@ -42,13 +45,13 @@ export abstract class Character extends Phaser.Physics.Arcade.Sprite implements 
     /** todo: stats, damage modifieds, etc. this will be a get variable that calculates all that stuff */
     damage:number;
     range:number;
-    speed: number;
+    speed:number;
 
-
-    // TODO: team attribute? for acquiring target
+    animate:boolean;
 
     constructor(p:AbstractCharacterParams) {
         super(p.main, p.pos?.x || 0, p.pos?.y || 0, p.texture);
+
         this.main = p.main;
 
         p.main.add.existing(this);
@@ -63,6 +66,8 @@ export abstract class Character extends Phaser.Physics.Arcade.Sprite implements 
         this.speed = p.speed ?? 200;
 
         this.flipX = p.flipX ?? false;
+
+        this.animate = p.animate ?? true; 
 
         let body = <Phaser.Physics.Arcade.Body>this.body;
         //body.setImmovable(true);
@@ -80,19 +85,46 @@ export abstract class Character extends Phaser.Physics.Arcade.Sprite implements 
 
     update(_:number) {
 
-        if (this.state != CharacterStates.DYING) {
-            // dead -> die
-            if (this.health.current <= 0) {
-                this.setState(CharacterStates.DYING);
-                this.once(Phaser.Animations.Events.ANIMATION_COMPLETE, () => {
-                    this.destroy();
-                });
-            }
-            // alive -> walk to player 
-            else if (this.main?.player) {
-                this.scene.physics.moveToObject(this, this.main.player, this.speed);    
+        if (this.health.current > 0) {
+            if (this.animate) {
+                this.update_animation();
             }
         }
+        // dead and not in dying state yet -> start dying
+        else if (this.state != CharacterStates.DYING) {
+            this.setState(CharacterStates.DYING);
+            this.once(Phaser.Animations.Events.ANIMATION_COMPLETE, () => {
+                this.destroy();
+            });         
+        }
+        
+    }
+
+
+    update_animation() {
+
+        // playing appropriate animation based on velocity...
+        const velocity = this.body.velocity;
+    
+        if (Math.abs(velocity.x) > Math.abs(velocity.y)) {
+            if (velocity.x > 0) {
+                return this.play(this.texture.key + "_right", true);
+            }
+            if (velocity.x < 0) {
+                return this.play(this.texture.key + "_left", true);
+            }
+        }
+        else {
+            if (velocity.y > 0) {
+                return this.play(this.texture.key + "_down", true);
+            }
+            if (velocity.y < 0) {
+                return this.play(this.texture.key + "_up", true);
+            }
+        }
+
+        return this.stop();
+    
     }
 
 
