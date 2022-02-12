@@ -20,9 +20,13 @@ export class Spawner {
         //          eventually, when the world is infinitely generated, we'll want them spawning slightly outside of view
         //          and walking in
         const padding = 100;
+        const offset = {
+            x: this.main.player.x - this.main.scale.width / 2,
+            y: this.main.player.y - this.main.scale.height / 2
+        };
         for (let i = 0; i < this.count; i++) {
-            let x = (Math.random() * this.main.scale.width - padding) + padding;
-            let y = (Math.random() * this.main.scale.height - padding) + padding;
+            let x = offset.x + (Math.random() * this.main.scale.width - padding) + padding;
+            let y = offset.y + (Math.random() * this.main.scale.height - padding) + padding;
             // is this going to cause problems? does this need to be copied to a new object?
             this.params.pos = {
                 x: x,

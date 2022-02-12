@@ -1,7 +1,9 @@
 import { Enemy } from "../objects/character/enemy.js";
 import { Player } from "../objects/character/player.js";
+import { Chunk } from "../objects/chunk.js";
 import { Fireball } from "../objects/projectiles/fireball.js";
 import { Spawner } from "../objects/spawner.js";
+import { roundTo } from "../util/math.js";
 
 export interface IMainScene extends Phaser.Scene {
     player:Player;
@@ -21,6 +23,12 @@ export class MainScene extends Phaser.Scene implements IMainScene {
 
     spawners: Spawner[];
 
+
+    followPoint: Phaser.Math.Vector2;
+    chunks: Chunk[];
+    CHUNK_SIZE: number;
+    bg:Phaser.GameObjects.TileSprite;
+            
     constructor() {
         super("???");
 
@@ -30,21 +38,15 @@ export class MainScene extends Phaser.Scene implements IMainScene {
     }
 
 
-    preload() {
-        this.load.atlas("vamp", "res/vamp.png", "res/vamp.json");
-        this.load.atlas("bat_purp", "res/bat_purp.png", "res/bat.json");
-        this.load.atlas("bat_red", "res/bat_red.png", "res/bat.json");
-
-        this.load.image("graem_happy", "res/graem_happy.png");
-        this.load.image("graem_sad", "res/graem_sad.png");
-        this.load.image("fireball", "res/fireball.png");
-    }
-
+    // called by phaser when scene gets created
     create() {
         this.load_animations();
-
         this.physics.world.setFPS(120);
 
+
+        this.CHUNK_SIZE = Math.max(this.scale.width, this.scale.height);
+
+    
         this.player = new Player({
             main: this,
             texture: "vamp",
@@ -56,7 +58,12 @@ export class MainScene extends Phaser.Scene implements IMainScene {
             speed: 300
         });
 
-    
+
+        // background repeats across 3x3 chunk grid surrounding player
+        this.bg = this.add.tileSprite(this.player.x, this.player.y, this.CHUNK_SIZE, this.CHUNK_SIZE, "grass");
+        this.bg.setDepth(-1);
+        this.bg.setScale(3, 3);
+
         //this.cursors = this.input.keyboard.createCursorKeys();
         this.cursors = <Phaser.Types.Input.Keyboard.CursorKeys>this.input.keyboard.addKeys({
             up: Phaser.Input.Keyboard.KeyCodes.W,
@@ -112,11 +119,33 @@ export class MainScene extends Phaser.Scene implements IMainScene {
         ];
 
 
+        this.followPoint = new Phaser.Math.Vector2(
+            this.cameras.main.worldView.x + (this.cameras.main.worldView.width / 2),
+            this.cameras.main.worldView.y + (this.cameras.main.worldView.height / 2)
+        );
+        this.chunks = [];
+
+
+        this.cameras.main.startFollow(this.player);
+
+    }
+
+    // #region load
+    // preload is called by phaser before create is called
+    preload() {
+        this.load.atlas("vamp", "res/vamp.png", "res/vamp.json");
+        this.load.atlas("bat_purp", "res/bat_purp.png", "res/bat.json");
+        this.load.atlas("bat_red", "res/bat_red.png", "res/bat.json");
+
+        this.load.image("grass", "res/grass.jpg");
+        this.load.image("graem_happy", "res/graem_happy.png");
+        this.load.image("graem_sad", "res/graem_sad.png");
+        this.load.image("fireball", "res/fireball.png");
     }
 
     load_atlas(key:string, frame_count:number, dirs:string[] = ["up","down","left","right"], frameRate:number = 4) {
         for (let dir of dirs) {
-            console.log("LOADING " + key + "_" + dir);
+            //console.log("LOADING " + key + "_" + dir);
             this.anims.create({
                 key: key + "_" + dir,
                 // end at frame_count (always start at 0)
@@ -131,23 +160,82 @@ export class MainScene extends Phaser.Scene implements IMainScene {
         this.load_atlas("bat_purp", 3, ["up", "right", "down", "left"]);
         this.load_atlas("bat_red", 3, ["up", "right", "down", "left"]);
     }
+    // #endregion
 
-    update(_:number, delta:number) {
-        this.update_input();
 
-        this.player.update(delta);
+    /** gets chunk that player is currently in */
+    getChunk(x:number, y:number) {
 
-        for (let spawner of this.spawners) spawner.update(delta);
-
-        for (let enemy of this.colliders.enemies.children.entries) {
-            enemy.update(delta);
+        for (let i = 0; i < this.chunks.length; i++) {
+            let chunk = this.chunks[i];
+            if (chunk.x == x && chunk.y == y) {
+                return chunk;
+            }
         }
 
+        // not found -> create new
+        let chunk = new Chunk(this, x, y);
+        this.chunks.push(chunk);
+        return chunk;
+    }
+
+    update(_:number, delta:number) {
+        this.player.update(delta);
+
+        for (let spawner of this.spawners)
+            spawner.update(delta);
+
+        for (let enemy of this.colliders.enemies.children.entries) 
+            enemy.update(delta);
+        
+        this.update_chunks();
+
+    }
+
+    update_chunks() {
+
+        
+        // snap player position to chunk grid
+        const pos = {
+            x: roundTo(this.player.x, this.CHUNK_SIZE),
+            y: roundTo(this.player.y, this.CHUNK_SIZE)
+        };
+ 
+        const near_chunks = [];
+
+        // #region create/load chunks surrounding player
+        const chunk = this.getChunk(pos.x, pos.y).load();
+        
+        // snapping background to chunk pos
+        this.bg.setPosition(chunk.x, chunk.y);
+
+        near_chunks.push(chunk);
+
+        // load chunks surrounding current chunk
+        const range = 2 * this.CHUNK_SIZE;
+        for (var x = pos.x - range; x < pos.x + range; x += this.CHUNK_SIZE) {
+            for (var y = pos.y - range; y < pos.y + range; y += this.CHUNK_SIZE) {
+                near_chunks.push(this.getChunk(x, y).load());
+            }
+        }
+        // #endregion
+
+        // #region unload far chunks
+        // TODO: 
+        //      copy enemies from unloaded chunk into newly loaded chunks... 
+        //      need to figure out how to do that. probably need to find the farthest chunk and scatter them about
+        //  OR
+        //      group them by their parent spawner, add to spawn temp count to add to next spawn batch
+        //          (spawner has a temp number that gets added to spawn count, resets to 0 on every spawn)
+
+        for (let chunk of this.chunks) {
+            if (near_chunks.indexOf(chunk) == -1) {
+                chunk.unload();
+            }
+        }
+        // #endregion
+        
     }
 
 
-
-    private update_input() {
-      
-    }
 }
