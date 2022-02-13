@@ -1,13 +1,14 @@
 // TODO: extend Projectile class, which extends Weapon class
 import { Projectile } from "./projecitle.js";
 const definition = {
-    texture: "fireball",
+    texture: "skull",
+    scale: { x: 2.5, y: 2.5 },
     damage: 10,
-    scale: { x: 4, y: 4 },
+    destroyOnCollide: false
 };
-export class Fireball extends Projectile {
+export class SkullProjectile extends Projectile {
     constructor(p) {
         super(definition, p);
     }
 }
-//# sourceMappingURL=fireball.js.map
+//# sourceMappingURL=skull.js.map

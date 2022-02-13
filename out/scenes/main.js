@@ -1,7 +1,7 @@
 import { Enemy } from "../objects/character/enemy.js";
 import { Player } from "../objects/character/player.js";
 import { Chunk } from "../objects/chunk.js";
-import { Fireball } from "../objects/projectiles/fireball.js";
+import { Projectile } from "../objects/projectiles/projecitle.js";
 import { Spawner } from "../objects/spawner.js";
 import { roundTo } from "../util/math.js";
 export class MainScene extends Phaser.Scene {
@@ -16,41 +16,23 @@ export class MainScene extends Phaser.Scene {
         this.load_animations();
         this.physics.world.setFPS(120);
         this.CHUNK_SIZE = Math.max(this.scale.width, this.scale.height);
-        this.player = new Player({
-            main: this,
-            texture: "vamp",
-            scale: { x: 3, y: 3 },
-            pos: {
-                x: this.scale.width / 2,
-                y: this.scale.height / 2
-            },
-            speed: 300
-        });
-        // background repeats across 3x3 chunk grid surrounding player
-        this.bg = this.add.tileSprite(this.player.x, this.player.y, this.CHUNK_SIZE, this.CHUNK_SIZE, "grass");
-        this.bg.setDepth(-1);
-        this.bg.setScale(3, 3);
-        //this.cursors = this.input.keyboard.createCursorKeys();
-        this.cursors = this.input.keyboard.addKeys({
-            up: Phaser.Input.Keyboard.KeyCodes.W,
-            down: Phaser.Input.Keyboard.KeyCodes.S,
-            left: Phaser.Input.Keyboard.KeyCodes.A,
-            right: Phaser.Input.Keyboard.KeyCodes.D
-        });
         this.colliders.enemies = this.physics.add.group({
             key: "enemies"
         });
         this.colliders.projectiles = this.physics.add.group({
             key: "projectiles"
         });
-        this.physics.add.collider(this.colliders.projectiles, this.colliders.enemies, (projectile, enemy) => {
-            if (projectile instanceof Fireball && enemy instanceof Enemy) {
-                projectile.collide(enemy);
-            }
-            /*console.log("PROJECTILE COLLIDED WITH ENEMY", {
+        // NOTE: overlap vs collider. collider does not allow overlapping 
+        this.physics.add.overlap(this.colliders.projectiles, this.colliders.enemies, (projectile, enemy) => {
+            console.log("PROJECTILE COLLIDED WITH ENEMY", {
                 projectile: projectile,
                 enemy: enemy
-            });*/
+            });
+            if (projectile instanceof Projectile && enemy instanceof Enemy) {
+                projectile.collide(enemy);
+            }
+            else {
+            }
         });
         /*this.physics.add.collider(this.player, this.colliders.enemies, (player, enemy) => {
             /*console.log("PLAYER COLLIDED WITH ENEMY", {
@@ -77,7 +59,27 @@ export class MainScene extends Phaser.Scene {
                 }
             }),
         ];
-        this.followPoint = new Phaser.Math.Vector2(this.cameras.main.worldView.x + (this.cameras.main.worldView.width / 2), this.cameras.main.worldView.y + (this.cameras.main.worldView.height / 2));
+        this.player = new Player({
+            main: this,
+            texture: "vamp",
+            scale: { x: 3, y: 3 },
+            pos: {
+                x: this.scale.width / 2,
+                y: this.scale.height / 2
+            },
+            speed: 300
+        });
+        // background repeats across 3x3 chunk grid surrounding player
+        this.bg = this.add.tileSprite(this.player.x, this.player.y, this.CHUNK_SIZE, this.CHUNK_SIZE, "grass");
+        this.bg.setDepth(-1);
+        this.bg.setScale(3, 3);
+        //this.cursors = this.input.keyboard.createCursorKeys();
+        this.cursors = this.input.keyboard.addKeys({
+            up: Phaser.Input.Keyboard.KeyCodes.W,
+            down: Phaser.Input.Keyboard.KeyCodes.S,
+            left: Phaser.Input.Keyboard.KeyCodes.A,
+            right: Phaser.Input.Keyboard.KeyCodes.D
+        });
         this.chunks = [];
         this.cameras.main.startFollow(this.player);
     }
@@ -91,6 +93,7 @@ export class MainScene extends Phaser.Scene {
         this.load.image("graem_happy", "res/graem_happy.png");
         this.load.image("graem_sad", "res/graem_sad.png");
         this.load.image("fireball", "res/fireball.png");
+        this.load.image("skull", "res/skull.png");
     }
     load_atlas(key, frame_count, dirs = ["up", "down", "left", "right"], frameRate = 4) {
         for (let dir of dirs) {

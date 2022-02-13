@@ -1,7 +1,7 @@
 import { Enemy } from "./character/enemy.js";
 export class Spawner {
     constructor(args) {
-        this.rate = args.rate || 3000;
+        this.rate = args.rate || 10000;
         this.count = args.count || 6;
         this.timer = this.rate;
         this.main = args.main;

@@ -10,4 +10,4 @@ export class Fireball extends Projectile {
         super(definition, p);
     }
 }
-//# sourceMappingURL=fireball.js.map
+//# sourceMappingURL=fireball%20copy.js.map

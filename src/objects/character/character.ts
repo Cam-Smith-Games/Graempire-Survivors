@@ -81,7 +81,6 @@ export abstract class Character extends Phaser.Physics.Arcade.Sprite implements 
     dist(c:Character) {
         return Phaser.Math.Distance.BetweenPoints(this, c);
     }
-    
 
     update(_:number) {
 

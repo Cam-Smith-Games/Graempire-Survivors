@@ -1,7 +1,7 @@
 import { Enemy } from "../objects/character/enemy.js";
 import { Player } from "../objects/character/player.js";
 import { Chunk } from "../objects/chunk.js";
-import { Fireball } from "../objects/projectiles/fireball.js";
+import { Projectile } from "../objects/projectiles/projecitle.js";
 import { Spawner } from "../objects/spawner.js";
 import { roundTo } from "../util/math.js";
 
@@ -24,7 +24,6 @@ export class MainScene extends Phaser.Scene implements IMainScene {
     spawners: Spawner[];
 
 
-    followPoint: Phaser.Math.Vector2;
     chunks: Chunk[];
     CHUNK_SIZE: number;
     bg:Phaser.GameObjects.TileSprite;
@@ -46,32 +45,6 @@ export class MainScene extends Phaser.Scene implements IMainScene {
 
         this.CHUNK_SIZE = Math.max(this.scale.width, this.scale.height);
 
-    
-        this.player = new Player({
-            main: this,
-            texture: "vamp",
-            scale: { x: 3, y: 3 },
-            pos: {
-                x: this.scale.width / 2,
-                y: this.scale.height / 2
-            },
-            speed: 300
-        });
-
-
-        // background repeats across 3x3 chunk grid surrounding player
-        this.bg = this.add.tileSprite(this.player.x, this.player.y, this.CHUNK_SIZE, this.CHUNK_SIZE, "grass");
-        this.bg.setDepth(-1);
-        this.bg.setScale(3, 3);
-
-        //this.cursors = this.input.keyboard.createCursorKeys();
-        this.cursors = <Phaser.Types.Input.Keyboard.CursorKeys>this.input.keyboard.addKeys({
-            up: Phaser.Input.Keyboard.KeyCodes.W,
-            down: Phaser.Input.Keyboard.KeyCodes.S,
-            left: Phaser.Input.Keyboard.KeyCodes.A,
-            right: Phaser.Input.Keyboard.KeyCodes.D
-        });
-
         this.colliders.enemies = this.physics.add.group({
             key: "enemies"
         });
@@ -79,17 +52,23 @@ export class MainScene extends Phaser.Scene implements IMainScene {
             key: "projectiles"
         });
 
+        // NOTE: overlap vs collider. collider does not allow overlapping 
+        this.physics.add.overlap(this.colliders.projectiles, this.colliders.enemies, (projectile, enemy) => {
 
-        this.physics.add.collider(this.colliders.projectiles, this.colliders.enemies, (projectile, enemy) => {
-            if (projectile instanceof Fireball && enemy instanceof Enemy) {
-                projectile.collide(enemy)
-            }
-
-            /*console.log("PROJECTILE COLLIDED WITH ENEMY", {
+            
+            console.log("PROJECTILE COLLIDED WITH ENEMY", {
                 projectile: projectile,
                 enemy: enemy
-            });*/
-        })
+            });
+
+            if (projectile instanceof Projectile && enemy instanceof Enemy) {
+                projectile.collide(enemy)
+            }
+            else {
+            }
+
+    
+        });
 
         /*this.physics.add.collider(this.player, this.colliders.enemies, (player, enemy) => {
             /*console.log("PLAYER COLLIDED WITH ENEMY", {
@@ -118,14 +97,35 @@ export class MainScene extends Phaser.Scene implements IMainScene {
             }), 
         ];
 
+            
+        this.player = new Player({
+            main: this,
+            texture: "vamp",
+            scale: { x: 3, y: 3 },
+            pos: {
+                x: this.scale.width / 2,
+                y: this.scale.height / 2
+            },
+            speed: 300
+        });
 
-        this.followPoint = new Phaser.Math.Vector2(
-            this.cameras.main.worldView.x + (this.cameras.main.worldView.width / 2),
-            this.cameras.main.worldView.y + (this.cameras.main.worldView.height / 2)
-        );
+
+        // background repeats across 3x3 chunk grid surrounding player
+        this.bg = this.add.tileSprite(this.player.x, this.player.y, this.CHUNK_SIZE, this.CHUNK_SIZE, "grass");
+        this.bg.setDepth(-1);
+        this.bg.setScale(3, 3);
+
+        //this.cursors = this.input.keyboard.createCursorKeys();
+        this.cursors = <Phaser.Types.Input.Keyboard.CursorKeys>this.input.keyboard.addKeys({
+            up: Phaser.Input.Keyboard.KeyCodes.W,
+            down: Phaser.Input.Keyboard.KeyCodes.S,
+            left: Phaser.Input.Keyboard.KeyCodes.A,
+            right: Phaser.Input.Keyboard.KeyCodes.D
+        });
+
+
+
         this.chunks = [];
-
-
         this.cameras.main.startFollow(this.player);
 
     }
@@ -141,6 +141,7 @@ export class MainScene extends Phaser.Scene implements IMainScene {
         this.load.image("graem_happy", "res/graem_happy.png");
         this.load.image("graem_sad", "res/graem_sad.png");
         this.load.image("fireball", "res/fireball.png");
+        this.load.image("skull", "res/skull.png");
     }
 
     load_atlas(key:string, frame_count:number, dirs:string[] = ["up","down","left","right"], frameRate:number = 4) {

@@ -1,20 +1,30 @@
-import { Fireball } from "../projectiles/fireball.js";
 import { Vector } from "../../struct/vector.js";
 import { Enemy } from "./enemy.js";
 import { AbstractCharacterParams, Character, CharacterStates } from "./character.js";
+import { Weapon } from "../weapons/weapon.js";
+import { FireWand } from "../weapons/fire_wand.js";
+import { Skull } from "../weapons/skull.js";
 
 export class Player extends Character {
 
 
-    // #region projecitle timer (this will be moved to a "Weapon" class. currently very simple)
-    fireRate:number = 500;
-    fireTimer:number = 0;
-    // #endregion
-
+    weapons:Weapon[];
 
     constructor(p:AbstractCharacterParams) {
         super(p);
+
+        this.weapons = [
+            new FireWand({
+                player: this
+            }),
+            new Skull({
+                player: this
+            })
+        ];
+
         this.play("vamp_down");
+
+
     }
 
 
@@ -28,12 +38,16 @@ export class Player extends Character {
         }
         else {
             this.update_input();
-            this.update_fire(delta);
+            //this.update_fire(delta);
+
+            for (let weapon of this.weapons) {
+                weapon.update(delta);
+            }
         }
 
     }
 
-    private update_fire(delta:number) {
+    /*private update_fire(delta:number) {
         this.fireTimer += delta;
         if (this.fireTimer >= this.fireRate) {
             this.fireTimer = 0;
@@ -43,7 +57,6 @@ export class Player extends Character {
             if (nearest) {
  
                 new Fireball({
-                    main: this.main,
                     caster: this,
                     target: nearest,
                     scale: { x: 4, y: 4 },
@@ -52,7 +65,7 @@ export class Player extends Character {
                 })
             }
         }
-    }
+    }*/
 
     private update_input() {
 
@@ -87,5 +100,13 @@ export class Player extends Character {
         // #endregion
 
     
+    }
+
+
+
+
+    getNearestEnemy() {      
+        let enemies = <Enemy[]>this.main.colliders.enemies.children.entries.filter(a => a instanceof Enemy);
+        return enemies.sort((a,b) => a.dist(this) - b.dist(this))[0];
     }
 }

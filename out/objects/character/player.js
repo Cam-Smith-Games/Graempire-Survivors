@@ -1,14 +1,19 @@
-import { Fireball } from "../projectiles/fireball.js";
 import { Vector } from "../../struct/vector.js";
 import { Enemy } from "./enemy.js";
 import { Character, CharacterStates } from "./character.js";
+import { FireWand } from "../weapons/fire_wand.js";
+import { Skull } from "../weapons/skull.js";
 export class Player extends Character {
-    // #endregion
     constructor(p) {
         super(p);
-        // #region projecitle timer (this will be moved to a "Weapon" class. currently very simple)
-        this.fireRate = 500;
-        this.fireTimer = 0;
+        this.weapons = [
+            new FireWand({
+                player: this
+            }),
+            new Skull({
+                player: this
+            })
+        ];
         this.play("vamp_down");
     }
     update(delta) {
@@ -19,27 +24,31 @@ export class Player extends Character {
         }
         else {
             this.update_input();
-            this.update_fire(delta);
+            //this.update_fire(delta);
+            for (let weapon of this.weapons) {
+                weapon.update(delta);
+            }
         }
     }
-    update_fire(delta) {
+    /*private update_fire(delta:number) {
         this.fireTimer += delta;
         if (this.fireTimer >= this.fireRate) {
             this.fireTimer = 0;
-            let enemies = this.main.colliders.enemies.children.entries.filter(a => a instanceof Enemy);
-            let nearest = enemies.sort((a, b) => a.dist(this) - b.dist(this))[0];
+
+            let enemies = <Enemy[]>this.main.colliders.enemies.children.entries.filter(a => a instanceof Enemy);
+            let nearest = enemies.sort((a,b) => a.dist(this) - b.dist(this))[0];
             if (nearest) {
+ 
                 new Fireball({
-                    main: this.main,
                     caster: this,
                     target: nearest,
                     scale: { x: 4, y: 4 },
                     speed: 600,
                     texture: "fireball"
-                });
+                })
             }
         }
-    }
+    }*/
     update_input() {
         // #region setting velocity from input
         let velocity = new Vector();
@@ -65,6 +74,10 @@ export class Player extends Character {
         velocity = velocity.unit().multiply(this.speed);
         this.setVelocity(velocity.x, velocity.y);
         // #endregion
+    }
+    getNearestEnemy() {
+        let enemies = this.main.colliders.enemies.children.entries.filter(a => a instanceof Enemy);
+        return enemies.sort((a, b) => a.dist(this) - b.dist(this))[0];
     }
 }
 //# sourceMappingURL=player.js.map
